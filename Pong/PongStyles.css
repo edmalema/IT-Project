@@ -1,0 +1,22 @@
+canvas{
+    border: 1px solid black;
+}
+
+body{
+    margin: 0;
+}
+
+#Points{
+    display: flex;
+    position: absolute;
+    text-align: center;
+    right: 35%;
+    top: -5%;
+    margin: 0;
+    font-size: 100px;
+    width: 30%;
+}
+
+.PointsText{
+    margin: 20%;
+}
