@@ -103,25 +103,7 @@ function CircleObj(PosX, PosY, SpeedX, SpeedY, Radius) {
     }
 }
 
-/*function Player1(PosX, PosY, Width, Height) {
-    this.PosX = PosX;
-    this.PosY = PosY;
-    this.Width = Width;
-    this.Height = Height;
-    //this.Color = `rgb(${R},${G},${B})`;
-    this.draw = function () {
-        Context.fillRect(this.PosX, this.PosY, this.Width, this.Height);
-        Context.fillStyle = "Blue";
-        Context.fill();
-    }
 
-    this.update = function () {
-
-
-
-        this.draw();
-    }
-}*/
 
 
 
@@ -129,11 +111,10 @@ function CircleObj(PosX, PosY, SpeedX, SpeedY, Radius) {
 
 Player1PosY = innerHeight / 2;
 Player1Width = 30;
-Player1Height = 300;
+Player1Height = 200;
 Player1Speed = 400;
 Player1PosX = innerWidth / 10;
 
-//this.Color = `rgb(${R},${G},${B})`;
 function Player1Draw() {
     if (UpwardsP1) {
         Player1PosY -= Player1Speed * deltaTime;
@@ -157,7 +138,7 @@ function Player1Draw() {
 Player2PosX = innerWidth / 10 * 9 - Player1Width;
 Player2PosY = innerHeight / 2;
 Player2Width = 30;
-Player2Height = 300;
+Player2Height = 200;
 Player2Speed = 400;
 //this.Color = `rgb(${R},${G},${B})`;
 function Player2Draw() {
@@ -211,18 +192,7 @@ function Init() {
         circleArray.push(new CircleObj(PosX, PosY, SpeedX, SpeedY, Radius));
     }
 
-    /* Player1Array = [];
-    for (var i = 0; i < 1; i++) {
-        var PosX = 200;
-        var Width = 30;
-        var PosY = innerHeight / 2;
-        var Height = 300;
 
-        //var R = Math.random() * 255;
-        //var G = Math.random() * 255;
-        //var B = Math.random() * 255;
-        Player1Array.push(new Player1(PosX, PosY, Width, Height));
-    }*/
 }
 
 
