@@ -1,5 +1,5 @@
 import { create3dPosColorInterleavedVao, CUBE_INDICES, CUBE_VERTICES, TABLE_INDICES, TABLE_VERTECES } from "./geometry.js";
-import { createProgram, createStaticIndexBuffer, createStaticVertexBuffer, getContext, loadTexture, showError } from "./gl-utils.js";
+import { createProgram, createStaticIndexBuffer, createStaticVertexBuffer, getContext, loadTexture, showError, createShader } from "./gl-utils.js";
 import { glMatrix, mat4, quat, vec3 } from 'gl-matrix';
 //OBS must be run with npx vite since it doesnt find gl-matrix
 
@@ -28,6 +28,7 @@ const vertexShaderSourceCode = `#version 300 es
     uniform mat4 matViewProj;
 
 
+
     void main(){
         fragUV = vertexUV; 
 
@@ -53,10 +54,40 @@ const fragmentShaderSourceCode = `#version 300 es
     uniform sampler2D uTexture;
     in vec2 fragUV;
 
+    uniform float t;
+
     void main(){
     
-        outputColor = texture(uTexture, fragUV) * vec4(fragmentColor, 1.0);
+        outputColor = texture(uTexture, fragUV) * (t - t + 1.0);
         //outputColor = vec4(fragmentColor, 1.0);
+    }`;
+
+const ColorfulFragmentShaderSC = `#version 300 es
+    
+    precision mediump float;
+
+    in vec3 fragmentColor;
+
+    out vec4 outputColor;
+
+    uniform sampler2D uTexture;
+    in vec2 fragUV;
+
+
+    vec4 startColor = vec4(1.0, 0.1, 0.6, 1.0);
+    vec4 endColor = vec4(0.2, 1.0, 0.9, 1.0);
+    uniform float t;
+
+    float circlingT(float T, float e){
+        return pow(4.0 * T * (1.0 - T), e);
+    }
+
+
+    void main(){
+    
+        outputColor = texture(uTexture, fragUV) * mix(startColor, endColor, circlingT(t, 6.0));
+        //outputColor = vec4(fragmentColor, 1.0);
+        
 
     }`;
 
@@ -102,19 +133,43 @@ class Shape {
     scaleVec = vec3.create();
     rotation = quat.create();
 
-    constructor(pos, scale, rotationAxis, rotationAngle, vao, numIndices, player, gravity) {
+    constructor(pos, scale, rotationAxis, rotationAngle, numIndices, player, gravity, texture,
+        Context, vertexShaderSourceCode, fragmentShaderSourceCode, Vertices, Indices
+    ) {
         this.pos = pos
         this.scale = scale
         this.rotationAxis = rotationAxis
         this.rotationAngle = rotationAngle
-        this.vao = vao
         this.numIndices = numIndices
         this.player = player
         this.gravity = gravity
+        this.texture = texture
+        this.shaderProgram = createShader(Context, vertexShaderSourceCode, fragmentShaderSourceCode)
+        this.geometryVao = create3dPosColorInterleavedVao(Context, Vertices, Indices, this.shaderProgram[1], this.shaderProgram[2], this.shaderProgram[3]);
+        if (!this.geometryVao) {
+            showError(`Failed to create VAOs: geometry = ${!!this.geometryVao}`);
+            return;
+        }
+        this.lerp_t = 0
     }
-    draw(Context, matWorldUniform) {
+    draw(Context, matViewProj, deltaTime) {
+
+        
+        Context.useProgram(this.shaderProgram[0]);
+
+
+
+        Context.uniformMatrix4fv(this.shaderProgram[5], false, matViewProj);
+
         quat.setAxisAngle(this.rotation, this.rotationAxis, this.rotationAngle);
         vec3.set(this.scaleVec, this.scale, this.scale, this.scale);
+
+        Context.activeTexture(Context.TEXTURE0);
+        Context.bindTexture(Context.TEXTURE_2D, this.texture);
+        Context.uniform1i(this.shaderProgram[6], 0);
+        Context.uniform1f(this.shaderProgram[7], this.lerp_t);
+
+
 
         mat4.fromRotationTranslationScale(
             this.matWorld,
@@ -123,11 +178,16 @@ class Shape {
             /* scale */this.scaleVec
         );
 
-        Context.uniformMatrix4fv(matWorldUniform, false, this.matWorld);
+        Context.uniformMatrix4fv(this.shaderProgram[4], false, this.matWorld);
 
-        Context.bindVertexArray(this.vao);
+
+        Context.bindVertexArray(this.geometryVao);
         Context.drawElements(Context.TRIANGLES, this.numIndices, Context.UNSIGNED_SHORT, 0);
         Context.bindVertexArray(null);
+        this.lerp_t += deltaTime;
+        if (this.lerp_t >= 1){
+            this.lerp_t = 0;
+        }
     }
     update(deltaTime) {
 
@@ -177,6 +237,7 @@ function Test3DWebGL() {
         return;
     }
 
+    /*
     const demoProgram = createProgram(Context, vertexShaderSourceCode, fragmentShaderSourceCode);
 
     if (!demoProgram) {
@@ -200,31 +261,30 @@ function Test3DWebGL() {
             `uv = ${uvAttrib}, textureUniformLocation = ${!!textureUniformLocation}`);
         return;
     }
-
-    const texture = loadTexture(Context, "../Textures/Cubed.jpg")
-
+*/
 
 
 
-    const cubeVao = create3dPosColorInterleavedVao(
-        Context, cubeVertices, cubeIndices, posAttrib, colorAttrib, uvAttrib);
-    const tableVao = create3dPosColorInterleavedVao(
-        Context, tableVerteces, tableIndices, posAttrib, colorAttrib, null);
-
-    if (!cubeVao || !tableVao) {
-        showError(`Failed to create VAOs: cube = ${!!cubeVao}, table = ${!!tableVao}`);
-        return;
-    }
+    /*
+        const cubeVao = create3dPosColorInterleavedVao(
+            Context, cubeVertices, cubeIndices, posAttrib, colorAttrib, uvAttrib);
+        const tableVao = create3dPosColorInterleavedVao(
+            Context, tableVerteces, tableIndices, posAttrib, colorAttrib, null);
+    
+        if (!cubeVao || !tableVao) {
+            showError(`Failed to create VAOs: cube = ${!!cubeVao}, table = ${!!tableVao}`);
+            return;
+        }*/
 
 
     const UP_VEC = vec3.fromValues(0, 1, 0);
 
     const shapes = [
-        new Shape(vec3.fromValues(0, 0, 0), 1, UP_VEC, 0, tableVao, TABLE_INDICES.length, false, false),
-        new Shape(vec3.fromValues(1, 5, 0.5), 0.4, UP_VEC, glMatrix.toRadian(40), cubeVao, CUBE_INDICES.length, true, true),
-        new Shape(vec3.fromValues(-0.3, 3, -0.7), 0.2, UP_VEC, glMatrix.toRadian(70), cubeVao, CUBE_INDICES.length, false, true),
-        new Shape(vec3.fromValues(0.2, 4, 0.8), 0.05, UP_VEC, glMatrix.toRadian(340), cubeVao, CUBE_INDICES.length, false, true),
-        new Shape(vec3.fromValues(-0.4, 6, 0.5), 0.1, UP_VEC, glMatrix.toRadian(320), cubeVao, CUBE_INDICES.length, false, true)
+        new Shape(vec3.fromValues(0, 0, 0), 1, UP_VEC, 0, TABLE_INDICES.length, false, false, loadTexture(Context, "../Textures/Cubed.jpg"), Context, vertexShaderSourceCode, fragmentShaderSourceCode, tableVerteces, tableIndices),
+        new Shape(vec3.fromValues(1, 5, 0.5), 0.4, UP_VEC, glMatrix.toRadian(40), CUBE_INDICES.length, true, true, loadTexture(Context, "../Textures/OrmboSadi.jpg"), Context, vertexShaderSourceCode, fragmentShaderSourceCode, cubeVertices, cubeIndices),
+        new Shape(vec3.fromValues(-0.3, 3, -0.7), 0.2, UP_VEC, glMatrix.toRadian(70), CUBE_INDICES.length, false, true, loadTexture(Context, "../Textures/Cubed.jpg"), Context, vertexShaderSourceCode, ColorfulFragmentShaderSC, cubeVertices, cubeIndices),
+        new Shape(vec3.fromValues(0.2, 4, 0.8), 0.05, UP_VEC, glMatrix.toRadian(340), CUBE_INDICES.length, false, true, loadTexture(Context, "../Textures/WoodPlank.jpg"), Context, vertexShaderSourceCode, fragmentShaderSourceCode, cubeVertices, cubeIndices),
+        new Shape(vec3.fromValues(-0.4, 6, 0.5), 0.1, UP_VEC, glMatrix.toRadian(320), CUBE_INDICES.length, false, true, loadTexture(Context, "../Textures/Cubed.jpg"), Context, vertexShaderSourceCode, fragmentShaderSourceCode, cubeVertices, cubeIndices)
 
     ]
 
@@ -292,16 +352,13 @@ function Test3DWebGL() {
 
         Context.viewport(0, 0, canvas.width, canvas.height);
 
-        Context.useProgram(demoProgram);
+        //Context.useProgram(demoProgram);
 
-        Context.activeTexture(Context.TEXTURE0);
-        Context.bindTexture(Context.TEXTURE_2D, texture);
-        Context.uniform1i(textureUniformLocation, 0);
+
 
         //Gives the GLSL variables a value
-        Context.uniformMatrix4fv(matViewProjUniform, false, matViewProj);
 
-        shapes.forEach((shape) => shape.draw(Context, matWorldUniform));
+        shapes.forEach((shape) => shape.draw(Context, matViewProj, deltaTime));
         requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);

@@ -53,10 +53,10 @@ export const CUBE_INDICES = new Uint16Array([
 
 export const TABLE_VERTECES = new Float32Array([
     // Top face
-    -10.0, 0.0, -10.0, 0.2, 0.2, 0.2,
-    -10.0, 0.0, 10.0, 0.2, 0.2, 0.2,
-    10.0, 0.0, 10.0, 0.2, 0.2, 0.2,
-    10.0, 0.0, -10.0, 0.2, 0.2, 0.2,
+    -10.0, 0.0, -10.0, 0.2, 0.2, 0.2,   0, 0,
+    -10.0, 0.0, 10.0, 0.2, 0.2, 0.2,    0, 1,
+    10.0, 0.0, 10.0, 0.2, 0.2, 0.2,     1, 1,
+    10.0, 0.0, -10.0, 0.2, 0.2, 0.2,    1, 0,
 ]);
 
 export const TABLE_INDICES = new Uint16Array([
@@ -81,33 +81,20 @@ export function create3dPosColorInterleavedVao(
     Context.enableVertexAttribArray(uvAttrib);
 
     Context.bindBuffer(Context.ARRAY_BUFFER, vertexBuffer);
-    if (uvAttrib != null) {
-        Context.vertexAttribPointer(
-            posAttrib, 3, Context.FLOAT, false,
-            8 * Float32Array.BYTES_PER_ELEMENT, 0);
 
-        Context.vertexAttribPointer(
-            colorAttrib, 3, Context.FLOAT, false,
-            8 * Float32Array.BYTES_PER_ELEMENT,
-            3 * Float32Array.BYTES_PER_ELEMENT);
+    Context.vertexAttribPointer(
+        posAttrib, 3, Context.FLOAT, false,
+        8 * Float32Array.BYTES_PER_ELEMENT, 0);
 
-        Context.vertexAttribPointer(
-            uvAttrib, 3, Context.FLOAT, false,
-            8 * Float32Array.BYTES_PER_ELEMENT,
-            6 * Float32Array.BYTES_PER_ELEMENT);
-    }
-    else {
-        Context.vertexAttribPointer(
-            posAttrib, 3, Context.FLOAT, false,
-            6 * Float32Array.BYTES_PER_ELEMENT, 0);
+    Context.vertexAttribPointer(
+        colorAttrib, 3, Context.FLOAT, false,
+        8 * Float32Array.BYTES_PER_ELEMENT,
+        3 * Float32Array.BYTES_PER_ELEMENT);
 
-        Context.vertexAttribPointer(
-            colorAttrib, 3, Context.FLOAT, false,
-            6 * Float32Array.BYTES_PER_ELEMENT,
-            3 * Float32Array.BYTES_PER_ELEMENT);
-    }
-
-
+    Context.vertexAttribPointer(
+        uvAttrib, 3, Context.FLOAT, false,
+        8 * Float32Array.BYTES_PER_ELEMENT,
+        6 * Float32Array.BYTES_PER_ELEMENT);
 
     Context.bindBuffer(Context.ARRAY_BUFFER, null);
 
@@ -119,3 +106,42 @@ export function create3dPosColorInterleavedVao(
 
     return vao;
 }
+
+
+
+
+
+
+
+
+/*
+export function parseOBJ(text){
+    const keywords ={
+
+    };
+
+    const keywordRE = /(\w*)(?: )*(.*)/;
+    const lines = text.split('\n');
+    for (let lineNo = 0; lineNo < lines.length; ++lineNo){
+        const line = lines[lineNo].trim();
+        if (line === ' ' || line.startsWith('#')){
+            continue;
+        }
+        const m = keywordRE.exec(line);
+
+        if (!m){
+            continue;
+        }
+        const [, keyword, unparsedArgs] = m;
+
+        const parts = line.split(/\s+/).slice(1);
+
+        const handler = keyword[keyword];
+
+        if (!handler) {
+            showError(`Unhandeled keyword: ${keyword} at line ${lineNo + 1}`);
+            continue;
+        }
+        handler(parts, unparsedArgs);
+    }
+}*/

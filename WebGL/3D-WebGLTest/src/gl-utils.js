@@ -10,7 +10,7 @@ export function showError(errorText) {
 export function createStaticVertexBuffer(Context, data) {
     const buffer = Context.createBuffer();
     if (!buffer) {
-        showError('Failed to allocate buffer')
+        showError('Failed to allocate buffer');
         return null;
     }
     Context.bindBuffer(Context.ARRAY_BUFFER, buffer)
@@ -189,4 +189,42 @@ export function loadTexture(Context, url) {
     };
     image.src = url;
     return texture;
+}
+
+
+
+
+export function createShader(Context, vertexShaderSourceCode, fragmentShaderSourceCode) {
+
+    const ShaderProgram = createProgram(Context, vertexShaderSourceCode, fragmentShaderSourceCode);
+
+    if (!ShaderProgram) {
+        showError('Failed to compile WebGL program');
+        return;
+    }
+
+    //Gets the location of the in variables from the GLSL source code
+    const posAttrib = Context.getAttribLocation(ShaderProgram, 'vertexPosition');
+    const colorAttrib = Context.getAttribLocation(ShaderProgram, 'vertexColor');
+    const uvAttrib = Context.getAttribLocation(ShaderProgram, 'vertexUV');
+
+    //Gets the location of the uniform variables from the GLSL source code
+    const matWorldUniform = Context.getUniformLocation(ShaderProgram, 'matWorld');
+    const matViewProjUniform = Context.getUniformLocation(ShaderProgram, 'matViewProj');
+    const textureUniformLocation = Context.getUniformLocation(ShaderProgram, 'uTexture');
+    const LerpT_UniformLocation = Context.getUniformLocation(ShaderProgram, 't');
+
+    
+
+    if (posAttrib < 0 || colorAttrib < 0 || !matWorldUniform || !matViewProjUniform ||
+        !textureUniformLocation || uvAttrib < 0 || !LerpT_UniformLocation) {
+        showError(`Failed to get attribs/uniforms:` +
+            `pos = ${posAttrib}, color = ${colorAttrib}, ` +
+            `matWorld = ${!!matWorldUniform}, matViewProj = ${!!matViewProjUniform}, ` +
+            `uv = ${uvAttrib}, textureUniformLocation = ${!!textureUniformLocation}, ` +
+            `lerp t = ${!!LerpT_UniformLocation}`);
+        return;
+    }
+
+    return [ShaderProgram, posAttrib, colorAttrib, uvAttrib, matWorldUniform, matViewProjUniform, textureUniformLocation, LerpT_UniformLocation];
 }
